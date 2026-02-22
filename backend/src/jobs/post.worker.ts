@@ -5,7 +5,7 @@ import pool from '../config/db';
 import { publishToFacebook } from '../services/facebook.service';
 import { publishToLinkedIn } from '../services/linkedin.service';
 import { publishToTelegram } from '../services/telegram.service';
-import { QueueJobData, PublishResult, Post } from '../types';
+import { QueueJobData, PublishResult, Post, LinkedInTarget, PublishPlatform } from '../types';
 
 // ============================================
 // BullMQ Worker - Post Publisher
@@ -26,10 +26,14 @@ redisConnection.on('error', (err) => {
 });
 
 /**
- * Publish a post to all social media platforms
+ * Publish a post to selected social media platforms
  */
-async function publishToAllPlatforms(postId: string): Promise<void> {
+async function publishToAllPlatforms(
+  postId: string,
+  platforms: PublishPlatform[] = ['facebook', 'linkedin', 'telegram']
+): Promise<void> {
   console.log(`\n🚀 Starting publishing for post: ${postId}`);
+  console.log(`   📋 Selected platforms: ${platforms.join(', ')}`);
 
   // 1. Fetch post from database
   const [rows] = await pool.query<RowDataPacket[]>(
@@ -44,12 +48,33 @@ async function publishToAllPlatforms(postId: string): Promise<void> {
   const post = rows[0] as Post;
   const fullContent = `${post.title}\n\n${post.content}`;
 
-  // 2. Publish to all platforms in parallel
-  const results: PublishResult[] = await Promise.all([
-    publishToFacebook(fullContent, post.image_url),
-    publishToLinkedIn(fullContent, post.image_url),
-    publishToTelegram(post.title, post.content, post.image_url),
-  ]);
+  // 2. Build promise array based on selected platforms
+  const promises: Promise<PublishResult | PublishResult[]>[] = [];
+  const hasFacebook = platforms.includes('facebook');
+  const hasLinkedInProfile = platforms.includes('linkedin');
+  const hasLinkedInPage = platforms.includes('linkedin_page');
+  const hasTelegram = platforms.includes('telegram');
+
+  if (hasFacebook) {
+    promises.push(publishToFacebook(fullContent, post.image_url));
+  }
+
+  if (hasLinkedInProfile || hasLinkedInPage) {
+    let linkedinTarget: LinkedInTarget = 'profile';
+    if (hasLinkedInProfile && hasLinkedInPage) linkedinTarget = 'both';
+    else if (hasLinkedInPage) linkedinTarget = 'page';
+    promises.push(publishToLinkedIn(fullContent, post.image_url, linkedinTarget));
+  }
+
+  if (hasTelegram) {
+    promises.push(publishToTelegram(post.title, post.content, post.image_url));
+  }
+
+  // 3. Execute all in parallel
+  const rawResults = await Promise.all(promises);
+
+  // Flatten (LinkedIn returns array)
+  const results: PublishResult[] = rawResults.flat() as PublishResult[];
 
   // 3. Save logs for each platform
   for (const result of results) {
@@ -102,7 +127,8 @@ export function startWorker(): Worker<QueueJobData> {
     'post-publish',
     async (job: Job<QueueJobData>) => {
       console.log(`\n📋 Processing job: ${job.id} | Post: ${job.data.postId}`);
-      await publishToAllPlatforms(job.data.postId);
+      const platforms = job.data.platforms || ['facebook', 'linkedin', 'telegram'];
+      await publishToAllPlatforms(job.data.postId, platforms);
     },
     {
       connection: redisConnection as any,

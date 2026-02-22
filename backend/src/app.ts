@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import postRoutes from './routes/post.routes';
+import linkedinRoutes from './routes/linkedin.routes';
+import facebookRoutes from './routes/facebook.routes';
 
 // ============================================
 // Express App Configuration
@@ -28,6 +30,8 @@ app.get('/api/health', (_req, res) => {
 
 // Routes
 app.use('/api/posts', postRoutes);
+app.use('/api/linkedin', linkedinRoutes);
+app.use('/api/facebook', facebookRoutes);
 
 // 404 handler
 app.use((_req, res) => {

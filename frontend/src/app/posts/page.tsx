@@ -79,44 +79,39 @@ export default function PostsPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Posts</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+          Posts
+        </h1>
         <p className="text-slate-500 mt-1">
           Create and manage your social media posts
         </p>
       </div>
 
-      {/* Layout: Form + List */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Form */}
-        <div className="lg:col-span-1">
-          <PostForm onPostCreated={fetchPosts} />
-        </div>
+      {/* Create Post Form (full width) */}
+      <PostForm onPostCreated={fetchPosts} />
 
-        {/* Post List */}
-        <div className="lg:col-span-2">
-          {loading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="bg-white rounded-xl p-5 animate-pulse border border-slate-200"
-                >
-                  <div className="h-5 w-48 bg-slate-200 rounded mb-2" />
-                  <div className="h-4 w-full bg-slate-100 rounded mb-1" />
-                  <div className="h-4 w-2/3 bg-slate-100 rounded" />
-                </div>
-              ))}
+      {/* Post List (full width) */}
+      {loading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="bg-white rounded-xl p-5 animate-pulse border border-slate-200"
+            >
+              <div className="h-5 w-48 bg-slate-200 rounded mb-2" />
+              <div className="h-4 w-full bg-slate-100 rounded mb-1" />
+              <div className="h-4 w-2/3 bg-slate-100 rounded" />
             </div>
-          ) : (
-            <PostList
-              posts={posts}
-              onRetry={handleRetry}
-              onDelete={handleDelete}
-              onViewLogs={handleViewLogs}
-            />
-          )}
+          ))}
         </div>
-      </div>
+      ) : (
+        <PostList
+          posts={posts}
+          onRetry={handleRetry}
+          onDelete={handleDelete}
+          onViewLogs={handleViewLogs}
+        />
+      )}
 
       {/* Log Viewer Modal */}
       {selectedLogs !== null && (

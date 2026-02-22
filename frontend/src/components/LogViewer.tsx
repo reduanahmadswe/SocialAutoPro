@@ -10,13 +10,14 @@ interface LogViewerProps {
 
 const platformConfig: Record<string, { label: string; color: string; bg: string }> = {
   facebook: { label: 'Facebook', color: 'text-[#1877F2]', bg: 'bg-[#1877F2]/10' },
-  linkedin: { label: 'LinkedIn', color: 'text-[#0A66C2]', bg: 'bg-[#0A66C2]/10' },
+  linkedin: { label: 'LinkedIn Profile', color: 'text-[#0A66C2]', bg: 'bg-[#0A66C2]/10' },
+  linkedin_page: { label: 'LinkedIn Page', color: 'text-[#0A66C2]', bg: 'bg-[#0A66C2]/10' },
   telegram: { label: 'Telegram', color: 'text-[#26A5E4]', bg: 'bg-[#26A5E4]/10' },
 };
 
 export default function LogViewer({ logs, onClose }: LogViewerProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Overlay */}
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
@@ -24,9 +25,9 @@ export default function LogViewer({ logs, onClose }: LogViewerProps) {
       />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-2xl max-h-[80vh] overflow-hidden animate-fade-in">
+      <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-xl border border-slate-200 w-full sm:max-w-2xl max-h-[85vh] sm:max-h-[80vh] overflow-hidden animate-fade-in">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-100">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100">
           <h3 className="font-semibold text-slate-800">Publishing Logs</h3>
           <button
             onClick={onClose}
@@ -39,7 +40,7 @@ export default function LogViewer({ logs, onClose }: LogViewerProps) {
         </div>
 
         {/* Body */}
-        <div className="p-5 overflow-y-auto max-h-[60vh] space-y-4">
+        <div className="p-4 sm:p-5 overflow-y-auto max-h-[65vh] sm:max-h-[60vh] space-y-3 sm:space-y-4">
           {logs.length === 0 ? (
             <div className="text-center py-8 text-slate-400">
               <p>No logs available yet</p>

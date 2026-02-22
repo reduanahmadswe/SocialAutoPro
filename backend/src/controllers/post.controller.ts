@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import pool from '../config/db';
 import { addPublishJob } from '../jobs/post.queue';
-import { CreatePostInput, ApiResponse, Post, PostWithLogs } from '../types';
+import { CreatePostInput, ApiResponse, Post, PostWithLogs, LinkedInTarget, PublishPlatform } from '../types';
 
 // ============================================
 // Post Controller
@@ -14,7 +14,10 @@ import { CreatePostInput, ApiResponse, Post, PostWithLogs } from '../types';
  */
 export async function createPost(req: Request, res: Response): Promise<void> {
   try {
-    const { title, content, image_url } = req.body as CreatePostInput;
+    const { title, content, image_url, platforms, linkedin_target } = req.body as CreatePostInput;
+    const selectedPlatforms: PublishPlatform[] = platforms && platforms.length > 0
+      ? platforms
+      : ['facebook', 'linkedin', 'telegram']; // default if not specified
 
     // Validation
     if (!title || !content) {
@@ -41,7 +44,7 @@ export async function createPost(req: Request, res: Response): Promise<void> {
     const post = rows[0] as Post;
 
     // Add to publishing queue
-    await addPublishJob(post.id);
+    await addPublishJob(post.id, selectedPlatforms);
 
     res.status(201).json({
       success: true,
@@ -202,7 +205,8 @@ export async function retryPost(req: Request, res: Response): Promise<void> {
     await pool.query('DELETE FROM post_logs WHERE post_id = ?', [id]);
 
     // Re-add to queue
-    await addPublishJob(id);
+    const platforms: PublishPlatform[] = req.body?.platforms || ['facebook', 'linkedin', 'telegram'];
+    await addPublishJob(id, platforms);
 
     res.json({
       success: true,

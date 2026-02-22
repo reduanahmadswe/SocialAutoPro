@@ -1,6 +1,6 @@
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
-import { QueueJobData } from '../types';
+import { QueueJobData, LinkedInTarget, PublishPlatform } from '../types';
 
 // ============================================
 // BullMQ Queue Configuration
@@ -41,15 +41,18 @@ export const postQueue = new Queue('post-publish', {
 /**
  * Add a post publishing job to the queue
  */
-export async function addPublishJob(postId: string): Promise<void> {
+export async function addPublishJob(
+  postId: string,
+  platforms: PublishPlatform[] = ['facebook', 'linkedin', 'telegram']
+): Promise<void> {
   await postQueue.add(
     'publish-post' as any,
-    { postId } as QueueJobData,
+    { postId, platforms } as QueueJobData,
     {
       jobId: `publish-${postId}-${Date.now()}`,
     }
   );
-  console.log(`📤 Job added to queue for post: ${postId}`);
+  console.log(`📤 Job added to queue for post: ${postId} (Platforms: ${platforms.join(', ')})`);
 }
 
 export { redisConnection };
