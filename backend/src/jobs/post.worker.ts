@@ -1,5 +1,6 @@
 import { Worker, Job } from 'bullmq';
 import IORedis from 'ioredis';
+import { RowDataPacket } from 'mysql2';
 import pool from '../config/db';
 import { publishToFacebook } from '../services/facebook.service';
 import { publishToLinkedIn } from '../services/linkedin.service';
@@ -31,16 +32,16 @@ async function publishToAllPlatforms(postId: string): Promise<void> {
   console.log(`\n🚀 Starting publishing for post: ${postId}`);
 
   // 1. Fetch post from database
-  const postResult = await pool.query<Post>(
-    'SELECT * FROM posts WHERE id = $1',
+  const [rows] = await pool.query<RowDataPacket[]>(
+    'SELECT * FROM posts WHERE id = ?',
     [postId]
   );
 
-  if (postResult.rows.length === 0) {
+  if (rows.length === 0) {
     throw new Error(`Post not found: ${postId}`);
   }
 
-  const post = postResult.rows[0];
+  const post = rows[0] as Post;
   const fullContent = `${post.title}\n\n${post.content}`;
 
   // 2. Publish to all platforms in parallel
@@ -53,8 +54,8 @@ async function publishToAllPlatforms(postId: string): Promise<void> {
   // 3. Save logs for each platform
   for (const result of results) {
     await pool.query(
-      `INSERT INTO post_logs (post_id, platform, response, status, error)
-       VALUES ($1, $2, $3, $4, $5)`,
+      `INSERT INTO post_logs (id, post_id, platform, response, status, error)
+       VALUES (UUID(), ?, ?, ?, ?, ?)`,
       [
         postId,
         result.platform,
@@ -72,7 +73,7 @@ async function publishToAllPlatforms(postId: string): Promise<void> {
 
   // 5. Update post status
   await pool.query(
-    'UPDATE posts SET status = $1, updated_at = NOW() WHERE id = $2',
+    'UPDATE posts SET status = ?, updated_at = NOW() WHERE id = ?',
     [finalStatus, postId]
   );
 
@@ -104,7 +105,7 @@ export function startWorker(): Worker<QueueJobData> {
       await publishToAllPlatforms(job.data.postId);
     },
     {
-      connection: redisConnection,
+      connection: redisConnection as any,
       concurrency: 1,
       limiter: {
         max: 5,

@@ -21,8 +21,8 @@ redisConnection.on('error', (err) => {
 });
 
 // Create the post publishing queue
-export const postQueue = new Queue<QueueJobData>('post-publish', {
-  connection: redisConnection,
+export const postQueue = new Queue('post-publish', {
+  connection: redisConnection as any,
   defaultJobOptions: {
     attempts: 3,
     backoff: {
@@ -43,8 +43,8 @@ export const postQueue = new Queue<QueueJobData>('post-publish', {
  */
 export async function addPublishJob(postId: string): Promise<void> {
   await postQueue.add(
-    'publish-post',
-    { postId },
+    'publish-post' as any,
+    { postId } as QueueJobData,
     {
       jobId: `publish-${postId}-${Date.now()}`,
     }

@@ -7,7 +7,7 @@ import { PublishResult } from '../types';
 
 const FACEBOOK_PAGE_ID = process.env.FACEBOOK_PAGE_ID || '';
 const FACEBOOK_ACCESS_TOKEN = process.env.FACEBOOK_ACCESS_TOKEN || '';
-const GRAPH_API_VERSION = 'v18.0';
+const GRAPH_API_VERSION = 'v25.0';
 const BASE_URL = `https://graph.facebook.com/${GRAPH_API_VERSION}`;
 
 /**
