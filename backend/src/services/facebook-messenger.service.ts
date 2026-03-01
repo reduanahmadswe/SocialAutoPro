@@ -18,7 +18,7 @@ const BASE_URL = `https://graph.facebook.com/${GRAPH_API_VERSION}`;
 export async function sendMessage(recipientId: string, messageText: string): Promise<any> {
   try {
     const response = await axios.post(
-      `${BASE_URL}/me/messages`,
+      `${BASE_URL}/${FACEBOOK_PAGE_ID}/messages`,
       {
         recipient: { id: recipientId },
         message: { text: messageText },
@@ -77,20 +77,36 @@ export async function storeOutgoingMessage(
 }
 
 /**
- * Find matching auto-reply rule based on keyword
+ * Find matching auto-reply rule based on keyword with priority
  * Returns matched rule or default fallback
+ * Now supports priority-based matching and categories
  */
 export async function findAutoReplyRule(messageText: string): Promise<FbAutoReplyRule | null> {
   const lowerMessage = messageText.toLowerCase().trim();
 
-  // 1. Try keyword match (non-default, active rules)
+  // 1. Try keyword match (non-default, active rules) - ORDER BY priority DESC
   const [rules] = await pool.query<RowDataPacket[]>(
-    `SELECT * FROM fb_auto_reply_rules WHERE is_default = FALSE AND is_active = TRUE ORDER BY created_at ASC`
+    `SELECT * FROM fb_auto_reply_rules 
+     WHERE is_default = FALSE AND is_active = TRUE 
+     ORDER BY priority DESC, created_at ASC`
   );
 
   for (const rule of rules as FbAutoReplyRule[]) {
-    if (lowerMessage.includes(rule.keyword.toLowerCase())) {
-      return rule;
+    const lowerKeyword = rule.keyword.toLowerCase();
+    
+    // Check match_type if available (for upgraded schema)
+    const matchType = (rule as any).match_type || 'contains';
+    
+    if (matchType === 'exact') {
+      // Exact match
+      if (lowerMessage === lowerKeyword) {
+        return rule;
+      }
+    } else {
+      // Contains match (default)
+      if (lowerMessage.includes(lowerKeyword)) {
+        return rule;
+      }
     }
   }
 

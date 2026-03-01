@@ -82,6 +82,9 @@ export interface FbAutoReplyRule {
   reply_text: string;
   is_default: boolean;
   is_active: boolean;
+  priority?: number;
+  category?: string;
+  match_type?: 'exact' | 'contains';
   created_at: Date;
   updated_at: Date;
 }
