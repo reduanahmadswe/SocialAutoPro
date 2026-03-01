@@ -6,11 +6,17 @@ import { QueueJobData, LinkedInTarget, PublishPlatform } from '../types';
 // BullMQ Queue Configuration
 // ============================================
 
-const redisConnection = new IORedis({
-  host: process.env.REDIS_HOST || '127.0.0.1',
-  port: parseInt(process.env.REDIS_PORT || '6379', 10),
-  maxRetriesPerRequest: null,
-});
+// Railway provides REDIS_URL, local dev uses REDIS_HOST/PORT
+const redisConnection = process.env.REDIS_URL
+  ? new IORedis(process.env.REDIS_URL, {
+      maxRetriesPerRequest: null,
+      enableReadyCheck: false,
+    })
+  : new IORedis({
+      host: process.env.REDIS_HOST || '127.0.0.1',
+      port: parseInt(process.env.REDIS_PORT || '6379', 10),
+      maxRetriesPerRequest: null,
+    });
 
 redisConnection.on('connect', () => {
   console.log('✅ Redis connected (Queue)');
